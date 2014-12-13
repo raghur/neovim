@@ -240,6 +240,8 @@ int main(int argc, char **argv)
   if (GARGCOUNT > 1 && !silent_mode)
     printf(_("%d files to edit\n"), GARGCOUNT);
 
+  event_early_init();
+
   if (params.want_full_screen && !silent_mode) {
     if (embedded_mode) {
       // embedded mode implies abstract_ui
