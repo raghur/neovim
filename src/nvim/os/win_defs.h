@@ -60,7 +60,16 @@
 # define read _read
 # define write _write
 # define snprintf _snprintf
-#endif
+
+# ifndef SSIZE_MAX
+#  if defined(_WIN64)
+#   define SSIZE_MAX _I64_MAX
+#  else
+#   define SSIZE_MAX LONG_MAX
+#  endif
+# endif
+
+#endif // MSVC
 
 #define TEMP_DIR_NAMES {"$TMP", "$TEMP", "$USERPROFILE", ""}
 #define TEMP_FILE_PATH_MAXLEN _MAX_PATH
