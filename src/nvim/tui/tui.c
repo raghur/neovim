@@ -107,6 +107,26 @@ UI *tui_start(void)
   return ui_bridge_attach(ui, tui_main, tui_scheduler);
 }
 
+static void unibi_out(UI *ui, int unibi_index)
+{
+  TUIData *data = ui->data;
+
+  const char *str = NULL;
+
+  if (unibi_index >= 0) {
+    if (unibi_index < unibi_string_begin_) {
+      str = unibi_get_ext_str(data->ut, (unsigned)unibi_index);
+    } else {
+      str = unibi_get_str(data->ut, (unsigned)unibi_index);
+    }
+  }
+
+  if (str) {
+    unibi_var_t vars[26 + 26] = {{0}};
+    unibi_format(vars, vars + 26, str, data->params, out, ui, NULL, NULL);
+  }
+}
+
 static void terminfo_start(UI *ui)
 {
   TUIData *data = ui->data;
@@ -213,7 +233,9 @@ static void tui_main(UIBridgeData *bridge, UI *ui)
   kv_init(data->invalid_regions);
   signal_watcher_init(data->loop, &data->winch_handle, ui);
   signal_watcher_init(data->loop, &data->cont_handle, data);
+#ifdef UNIX
   signal_watcher_start(&data->cont_handle, sigcont_cb, SIGCONT);
+#endif
   // initialize input reading structures
   term_input_init(&data->input, &tui_loop);
   tui_terminal_start(ui);
@@ -249,10 +271,12 @@ static void refresh_event(void **argv)
   ui_refresh();
 }
 
+#ifdef UNIX
 static void sigcont_cb(SignalWatcher *watcher, int signum, void *data)
 {
   ((TUIData *)data)->cont_received = true;
 }
+#endif
 
 static void sigwinch_cb(SignalWatcher *watcher, int signum, void *data)
 {
@@ -510,7 +534,6 @@ static void tui_scroll(UI *ui, int count)
         unibi_out(ui, unibi_parm_delete_line);
       }
     }
-
   } else {
     if (data->can_use_terminal_scroll) {
       if (count == -1) {
@@ -595,6 +618,7 @@ static void tui_flush(UI *ui)
   flush_buf(ui);
 }
 
+#ifdef UNIX
 static void suspend_event(void **argv)
 {
   UI *ui = argv[0];
@@ -614,19 +638,23 @@ static void suspend_event(void **argv)
   // resume the main thread
   CONTINUE(data->bridge);
 }
+#endif
 
 static void tui_suspend(UI *ui)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   // kill(0, SIGTSTP) won't stop the UI thread, so we must poll for SIGCONT
   // before continuing. This is done in another callback to avoid
   // loop_poll_events recursion
   queue_put_event(data->loop->fast_events,
       event_create(1, suspend_event, 1, ui));
+#endif
 }
 
 static void tui_set_title(UI *ui, char *title)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   if (!(title && unibi_get_str(data->ut, unibi_to_status_line) &&
         unibi_get_str(data->ut, unibi_from_status_line))) {
@@ -635,6 +663,7 @@ static void tui_set_title(UI *ui, char *title)
   unibi_out(ui, unibi_to_status_line);
   out(ui, title, strlen(title));
   unibi_out(ui, unibi_from_status_line);
+#endif
 }
 
 static void tui_set_icon(UI *ui, char *icon)
@@ -709,9 +738,13 @@ static void update_size(UI *ui)
     goto end;
   }
 
+#ifdef UNIX
   // 4 - read from terminfo if available
   height = unibi_get_num(data->ut, unibi_lines);
   width = unibi_get_num(data->ut, unibi_columns);
+#else
+  // FIXME
+#endif
 
 end:
   if (width <= 0 || height <= 0) {
@@ -726,30 +759,14 @@ end:
 
 static void unibi_goto(UI *ui, int row, int col)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   data->params[0].i = row;
   data->params[1].i = col;
   unibi_out(ui, unibi_cursor_address);
-}
-
-static void unibi_out(UI *ui, int unibi_index)
-{
-  TUIData *data = ui->data;
-
-  const char *str = NULL;
-
-  if (unibi_index >= 0) {
-    if (unibi_index < unibi_string_begin_) {
-      str = unibi_get_ext_str(data->ut, (unsigned)unibi_index);
-    } else {
-      str = unibi_get_str(data->ut, (unsigned)unibi_index);
-    }
-  }
-
-  if (str) {
-    unibi_var_t vars[26 + 26] = {{0}};
-    unibi_format(vars, vars + 26, str, data->params, out, ui, NULL, NULL);
-  }
+#else
+  // FIXME
+#endif
 }
 
 static void out(void *ctx, const char *str, size_t len)
