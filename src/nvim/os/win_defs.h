@@ -77,6 +77,9 @@ typedef SSIZE_T ssize_t;
 
 typedef uv_uid_t uid_t;
 
+// Separator char for environment variables
+#define ENV_SEPCHAR ';'
+
 // lines end in CR-NL instead of NL
 #define USE_CRNL
 
