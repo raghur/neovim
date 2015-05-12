@@ -73,4 +73,7 @@ typedef SSIZE_T ssize_t;
 # endif
 #endif
 
+// Separator char for environment variables
+#define ENV_SEPCHAR ';'
+
 #endif  // NVIM_OS_WIN_DEFS_H
