@@ -21,6 +21,11 @@
 #include <time.h>
 #include <sys/stat.h>
 
+// FIXME(equalsraf): this is only used by if_cscope.c
+#ifndef S_ISLNK
+# define S_ISLNK(mode) 0
+#endif
+
 // For MSVC
 #ifdef _MSC_VER
 # ifndef inline
