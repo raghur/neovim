@@ -3,8 +3,8 @@
 # writing a recipe that is meant for cross-compile, use the HOSTDEPS_* variables
 # instead of DEPS_* - check the main CMakeLists.txt for a list.
 
-if(MSVC OR (MINGW AND NOT CMAKE_CROSSCOMPILING))
-  message(STATUS "Building busted in Windows is not supported (skipping)")
+if(MINGW AND NOT CMAKE_CROSSCOMPILING)
+  message(STATUS "Building busted in Windows/Mingw is not supported (skipping)")
 else()
   option(USE_BUNDLED_BUSTED "Use the bundled version of busted to run tests." ON)
 endif()
@@ -145,19 +145,21 @@ if(USE_BUNDLED_BUSTED)
   add_custom_target(busted
     DEPENDS ${HOSTDEPS_BIN_DIR}/busted)
 
-  add_custom_command(OUTPUT ${HOSTDEPS_BIN_DIR}/luacheck
-    COMMAND ${LUAROCKS_BINARY}
-    ARGS build https://raw.githubusercontent.com/mpeterv/luacheck/3929eaa3528be2a8a50c593d687c8625205a2033/luacheck-scm-1.rockspec ${LUAROCKS_BUILDARGS}
-    DEPENDS busted)
-  add_custom_target(luacheck
-    DEPENDS ${HOSTDEPS_BIN_DIR}/luacheck)
-
-  add_custom_command(OUTPUT ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client
-    COMMAND ${LUAROCKS_BINARY}
-    ARGS build https://raw.githubusercontent.com/neovim/lua-client/0.0.1-14/nvim-client-0.0.1-14.rockspec ${LUAROCKS_BUILDARGS} LIBUV_DIR=${HOSTDEPS_INSTALL_DIR}
-    DEPENDS luacheck libuv)
-  add_custom_target(nvim-client
-    DEPENDS ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client)
-
-  list(APPEND THIRD_PARTY_DEPS busted luacheck nvim-client)
+  if(NOT WIN32)
+    add_custom_command(OUTPUT ${HOSTDEPS_BIN_DIR}/luacheck
+      COMMAND ${LUAROCKS_BINARY}
+      ARGS build https://raw.githubusercontent.com/mpeterv/luacheck/3929eaa3528be2a8a50c593d687c8625205a2033/luacheck-scm-1.rockspec ${LUAROCKS_BUILDARGS}
+      DEPENDS busted)
+    add_custom_target(luacheck
+      DEPENDS ${HOSTDEPS_BIN_DIR}/luacheck)
+  
+    add_custom_command(OUTPUT ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client
+      COMMAND ${LUAROCKS_BINARY}
+      ARGS build https://raw.githubusercontent.com/neovim/lua-client/0.0.1-14/nvim-client-0.0.1-14.rockspec ${LUAROCKS_BUILDARGS} LIBUV_DIR=${HOSTDEPS_INSTALL_DIR}
+      DEPENDS luacheck libuv)
+    add_custom_target(nvim-client
+      DEPENDS ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client)
+  
+    list(APPEND THIRD_PARTY_DEPS busted luacheck nvim-client)
+  endif()
 endif()
