@@ -399,8 +399,8 @@ add_subdirectory(test/includes)
 add_subdirectory(config)
 if (NOT WIN32)
   add_subdirectory(test/functional/fixtures) # compile pty/shell test programs
+  add_subdirectory(runtime)
 endif()
-add_subdirectory(runtime)
 
 # Setup some test-related bits.  We do this after going down the tree because we
 # need some of the targets.
