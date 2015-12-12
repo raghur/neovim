@@ -9,6 +9,7 @@ foreach(hfile ${PRE_HEADERS})
       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${post_hfile}
       COMMAND ${CMAKE_C_COMPILER} /P /EP
         ${CMAKE_CURRENT_SOURCE_DIR}/${hfile}
+        -I${LIBUV_INCLUDE_DIRS}
 	/Fi${CMAKE_CURRENT_BINARY_DIR}/${post_hfile})
   else()
     add_custom_command(
