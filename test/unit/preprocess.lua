@@ -10,6 +10,16 @@ if env_cc then
   table.insert(ccs, {path = "/usr/bin/env " .. tostring(env_cc), type = "gcc"})
 end
 
+local env_cmake_cc = os.getenv("CMAKE_C_COMPILER")
+if env_cmake_cc then
+  local env_cmake_cc_id = os.getenv("CMAKE_C_COMPILER_ID")
+  if env_cmake_cc_id == "MSVC" then
+    table.insert(ccs, {path = env_cmake_cc, type = "msvc"})
+  else
+    table.insert(ccs, {path = env_cmake_cc, type = "gcc"})
+  end
+end
+
 if ffi.os == "Windows" then
   table.insert(ccs, {path = "cl", type = "msvc"})
 end
@@ -138,23 +148,16 @@ function Gcc:dependencies(hdr)
   end
 end
 
--- returns a stream representing a preprocessed form of the passed-in headers.
--- Don't forget to close the stream by calling the close() method on it.
-function Gcc:preprocess_stream(...)
-  -- create pseudo-header
-  local pseudoheader = headerize({...}, false)
-  local defines = table.concat(self.preprocessor_extra_flags, ' ')
-  local cmd = ("echo $hdr | " ..
-               tostring(self.path) ..
-               " " ..
-               tostring(defines) ..
-               " -std=c99 -P -E -"):gsub('$hdr', shell_quote(pseudoheader))
-  -- lfs = require("lfs")
-  -- print("CWD: #{lfs.currentdir!}")
-  -- print("CMD: #{cmd}")
-  -- io.stderr\write("CWD: #{lfs.currentdir!}\n")
-  -- io.stderr\write("CMD: #{cmd}\n")
-  return io.popen(cmd)
+-- returns preprocessed header, see test/includes/CMakeLists.txt for a list of headers.
+function Gcc:preprocess_stream(hdr)
+  local file, err = io.open('build/test/includes/ffi-headers/' .. hdr , 'r')
+  if file == nil then
+    print("preprocess could not open " .. hdr .. ", is it in test/include/CMakeLists.txt FFI_HEADERS? " .. err)
+    os.exit(-1)
+  end
+  data = file:read("*a")
+  file.close()
+  return data
 end
 
 local Clang = Gcc:new()
@@ -192,8 +195,8 @@ return {
   includes = function(hdr)
     return cc:dependencies(hdr)
   end,
-  preprocess_stream = function(...)
-    return cc:preprocess_stream(...)
+  preprocess_stream = function(hdr)
+    return cc:preprocess_stream(hdr)
   end,
   add_to_include_path = function(...)
     return cc:add_to_include_path(...)

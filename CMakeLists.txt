@@ -465,7 +465,7 @@ if(BUSTED_PRG)
       -DBUILD_DIR=${CMAKE_BINARY_DIR}
       -DTEST_TYPE=unit
       -P ${PROJECT_SOURCE_DIR}/cmake/RunTests.cmake
-    DEPENDS ${UNITTEST_PREREQS})
+    DEPENDS ${UNITTEST_PREREQS} ffi-headers)
 
   add_custom_target(functionaltest
     COMMAND ${CMAKE_COMMAND}

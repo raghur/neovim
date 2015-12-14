@@ -58,52 +58,46 @@ local function cimport(...)
     return libnvim
   end
 
-  local body = nil
-  for _ = 1, 10 do
-    local stream = Preprocess.preprocess_stream(unpack(paths))
-    body = stream:read("*a")
-    stream:close()
-    if body ~= nil then break end
-  end
-
-  if body == nil then
-    print("ERROR: helpers.lua: Preprocess.preprocess_stream():read() returned empty")
-  end
-
-  -- format it (so that the lines are "unique" statements), also filter out
-  -- Objective-C blocks
-  body = formatc(body)
-  body = filter_complex_blocks(body)
-
-  -- add the formatted lines to a set
-  local new_cdefs = Set:new()
-  for line in body:gmatch("[^\r\n]+") do
-    line = trim(line)
-    -- give each #pragma pack an unique id, so that they don't get removed
-    -- if they are inserted into the set
-    -- (they are needed in the right order with the struct definitions,
-    -- otherwise luajit has wrong memory layouts for the sturcts)
-    if line:match("#pragma%s+pack") then
-      line = line .. " // " .. pragma_pack_id
-      pragma_pack_id = pragma_pack_id + 1
+  for _,header in ipairs(paths) do
+    local body = Preprocess.preprocess_stream(header)
+    if body == nil then
+      print("ERROR: helpers.lua: Preprocess.preprocess_stream() returned empty")
     end
-    new_cdefs:add(line)
+
+    -- format it (so that the lines are "unique" statements), also filter out
+    -- Objective-C blocks
+    print(header)
+    body = formatc(body)
+    body = filter_complex_blocks(body)
+
+    -- add the formatted lines to a set
+    local new_cdefs = Set:new()
+    for line in body:gmatch("[^\r\n]+") do
+      line = trim(line)
+      -- give each #pragma pack an unique id, so that they don't get removed
+      -- if they are inserted into the set
+      -- (they are needed in the right order with the struct definitions,
+      -- otherwise luajit has wrong memory layouts for the sturcts)
+      if line:match("#pragma%s+pack") then
+        line = line .. " // " .. pragma_pack_id
+        pragma_pack_id = pragma_pack_id + 1
+      end
+      new_cdefs:add(line)
+    end
+
+    -- subtract the lines we've already imported from the new lines, then add
+    -- the new unique lines to the old lines (so they won't be imported again)
+    new_cdefs:diff(cdefs)
+    cdefs:union(new_cdefs)
+
+    if new_cdefs:size() ~= 0 then
+      -- request a sorted version of the new lines (same relative order as the
+      -- original preprocessed file) and feed that to the LuaJIT ffi
+      local new_lines = new_cdefs:to_table()
+      local decl = table.concat(new_lines, "\n")
+      ffi.cdef(decl)
+    end
   end
-
-  -- subtract the lines we've already imported from the new lines, then add
-  -- the new unique lines to the old lines (so they won't be imported again)
-  new_cdefs:diff(cdefs)
-  cdefs:union(new_cdefs)
-
-  if new_cdefs:size() == 0 then
-    -- if there's no new lines, just return
-    return libnvim
-  end
-
-  -- request a sorted version of the new lines (same relative order as the
-  -- original preprocessed file) and feed that to the LuaJIT ffi
-  local new_lines = new_cdefs:to_table()
-  ffi.cdef(table.concat(new_lines, "\n"))
 
   return libnvim
 end
@@ -112,7 +106,7 @@ local function cppimport(path)
   return cimport(Paths.test_include_path .. '/' .. path)
 end
 
-cimport('./src/nvim/types.h')
+cimport('nvim/types.h')
 
 -- take a pointer to a C-allocated string and return an interned
 -- version while also freeing the memory
