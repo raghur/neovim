@@ -41,3 +41,9 @@ function(GetWindowsDep)
     INSTALL_COMMAND "${_gettool_INSTALL_COMMAND}")
   list(APPEND THIRD_PARTY_DEPS ${__gettool_TARGET})
 endfunction()
+
+GetWindowsDep(TARGET win32yank
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${DEPS_INSTALL_DIR}/bin
+    COMMAND ${CMAKE_COMMAND} -E copy 
+             ${DEPS_BUILD_DIR}/src/win32yank/win32yank.exe
+	     ${DEPS_INSTALL_DIR}/bin)
