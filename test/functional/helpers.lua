@@ -1,5 +1,6 @@
 require('coxpcall')
 local lfs = require('lfs')
+local ffi = require('ffi')
 local assert = require('luassert')
 local Loop = require('nvim.loop')
 local MsgpackStream = require('nvim.msgpack_stream')
@@ -244,11 +245,21 @@ local function write_file(name, text, dont_dedent)
   file:close()
 end
 
+local function tmpname(func)
+  if ffi.os == 'Windows' then
+    -- In Windows tmpname() returns filename starting with special sequence \s
+    local fname = os.getenv('TEMP') .. '\\' .. os.tmpname():gsub('^\\', '')
+    return fname
+  else
+    return os.tmpname()
+  end
+end
+
 local function source(code)
-  local tmpname = os.tmpname()
-  write_file(tmpname, code)
-  nvim_command('source '..tmpname)
-  os.remove(tmpname)
+  local fname = tmpname()
+  write_file(fname, code)
+  nvim_command('source '..fname)
+  os.remove(fname)
 end
 
 local function eq(expected, actual)
@@ -443,4 +454,5 @@ return {
   curbufmeths = curbufmeths,
   curwinmeths = curwinmeths,
   curtabmeths = curtabmeths,
+  tmpname = tmpname,
 }
