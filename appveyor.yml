@@ -7,6 +7,7 @@ environment:
     DEPS_PATH: deps64
   - GENERATOR: Visual Studio 14
     DEPS_PATH: deps32
+    BUILD_NUPKG: 1
 install: []
 build_script:
 # See http://help.appveyor.com/discussions/problems/539-cloning-gyp-fails
@@ -22,6 +23,11 @@ build_script:
 - cmake --build .
 - bin\nvim.exe --version
 - cmake --build . --target install -- /p:Configuration=Release
+- if DEFINED BUILD_NUPKG nuget pack -Version 0.0.0-pr810 ..\contrib\neovim.nuspec
+nuget:
+  project_feed: true
 artifacts:
 - path: INSTALL
   name: Neovim
+- path: 'build/*.nupkg'
+  name: nupkgs
