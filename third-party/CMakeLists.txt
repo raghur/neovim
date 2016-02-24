@@ -101,6 +101,9 @@ set(LIBVTERM_SHA256 13ef3a4e68a1b0fda5b2fc601e3308220497cb1debfa822ed5aad1eba4f2
 set(JEMALLOC_URL https://github.com/jemalloc/jemalloc/releases/download/4.0.2/jemalloc-4.0.2.tar.bz2)
 set(JEMALLOC_SHA256 0d8a9c8a98adb6983e0ccb521d45d9db1656ef3e71d0b14fb333f2c8138f4611)
 
+set(WINPTY_URL https://github.com/equalsraf/winpty/releases/download/neovim-810/winpty.zip)
+set(WINPTY_SHA256 af2e76af5933139a727d1688e413994b2a20fe5e2f620c446e7ed91196b054a6)
+
 if(USE_BUNDLED_UNIBILIUM)
   include(BuildUnibilium)
 endif()

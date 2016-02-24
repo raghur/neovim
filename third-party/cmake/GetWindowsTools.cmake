@@ -59,3 +59,14 @@ GetTool(TARGET win32yank
              ${DEPS_BUILD_DIR}/src/win32yank/win32yank.exe
 	     ${DEPS_INSTALL_DIR}/bin)
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8 )
+  set(ARCH 64)
+else()
+  set(ARCH 32)
+endif()
+GetTool(TARGET winpty
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${DEPS_INSTALL_DIR}/bin
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/bin${ARCH}/* -DTO=${DEPS_INSTALL_DIR}/bin/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/include/* -DTO=${DEPS_INSTALL_DIR}/include/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/lib${ARCH}/* -DTO=${DEPS_INSTALL_DIR}/lib/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake)
+
