@@ -41,6 +41,8 @@ function(GetTool)
   list(APPEND THIRD_PARTY_DEPS ${__gettool_TARGET})
 endfunction()
 
+include(TargetArch)
+
 GetTool(TARGET diffutils
   INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${DEPS_INSTALL_DIR}/bin
     COMMAND ${CMAKE_COMMAND} -E copy ${DEPS_BUILD_DIR}/src/diffutils/bin/diff.exe ${DEPS_INSTALL_DIR}/bin)
@@ -58,4 +60,17 @@ GetTool(TARGET win32yank
     COMMAND ${CMAKE_COMMAND} -E copy 
              ${DEPS_BUILD_DIR}/src/win32yank/win32yank.exe
 	     ${DEPS_INSTALL_DIR}/bin)
+
+if("${ARCHITECTURE}" STREQUAL "X86_64")
+  set(ARCH 64)
+elseif(ARCHITECTURE STREQUAL "X86")
+  set(ARCH 32)
+else()
+  message(FATAL "Unsupported architecture cannot download winpty")
+endif()
+GetTool(TARGET winpty
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${DEPS_INSTALL_DIR}/bin
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/bin${ARCH}/* -DTO=${DEPS_INSTALL_DIR}/bin/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/include/* -DTO=${DEPS_INSTALL_DIR}/include/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake
+    COMMAND ${CMAKE_COMMAND} -DFROM_GLOB=${DEPS_BUILD_DIR}/src/winpty/lib${ARCH}/* -DTO=${DEPS_INSTALL_DIR}/lib/ -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CopyFilesGlob.cmake)
 
