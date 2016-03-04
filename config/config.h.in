@@ -58,6 +58,4 @@
 #cmakedefine HAVE_BE64TOH
 #cmakedefine ORDER_BIG_ENDIAN
 
-#cmakedefine FEAT_TERMINAL_UI
-
 #endif  // AUTO_CONFIG_H

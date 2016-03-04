@@ -30,9 +30,7 @@
 #include "nvim/screen.h"
 #include "nvim/syntax.h"
 #include "nvim/window.h"
-#ifdef FEAT_TERMINAL_UI
-# include "nvim/tui/tui.h"
-#endif
+#include "nvim/tui/tui.h"
 
 #ifdef INCLUDE_GENERATED_DECLARATIONS
 # include "ui.c.generated.h"
@@ -83,12 +81,10 @@ static int height, width;
 #define UI_CALL_MORE(method, ...) if (ui->method) ui->method(ui, __VA_ARGS__)
 #define UI_CALL_ZERO(method) if (ui->method) ui->method(ui)
 
-#ifdef FEAT_TERMINAL_UI
 void ui_builtin_start(void)
 {
   tui_start();
 }
-#endif
 
 void ui_builtin_stop(void)
 {

@@ -3,7 +3,9 @@
 
 #include <stdbool.h>
 
-#include <termkey.h>
+#ifdef UNIX
+# include <termkey.h>
+#endif
 #include "nvim/event/stream.h"
 #include "nvim/event/time.h"
 
@@ -11,7 +13,9 @@ typedef struct term_input {
   int in_fd;
   bool paste_enabled;
   bool waiting;
+#ifdef UNIX
   TermKey *tk;
+#endif
   TimeWatcher timer_handle;
   Loop *loop;
   Stream read_stream;

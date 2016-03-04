@@ -31,11 +31,13 @@ void term_input_init(TermInput *input, Loop *loop)
   if (!term) {
     term = "";  // termkey_new_abstract assumes non-null (#2745)
   }
+#ifdef UNIX
   int enc_flag = enc_utf8 ? TERMKEY_FLAG_UTF8 : TERMKEY_FLAG_RAW;
   input->tk = termkey_new_abstract(term, enc_flag);
 
   int curflags = termkey_get_canonflags(input->tk);
   termkey_set_canonflags(input->tk, curflags | TERMKEY_CANON_DELBS);
+#endif
   // setup input handle
   rstream_init_fd(loop, &input->read_stream, input->in_fd, 0xfff, input);
   // initialize a timer handle for handling ESC with libtermkey
@@ -49,7 +51,9 @@ void term_input_destroy(TermInput *input)
   uv_cond_destroy(&input->key_buffer_cond);
   time_watcher_close(&input->timer_handle, NULL);
   stream_close(&input->read_stream, NULL);
+#ifdef UNIX
   termkey_destroy(input->tk);
+#endif
 }
 
 void term_input_start(TermInput *input)
@@ -112,6 +116,7 @@ static void enqueue_input(TermInput *input, char *buf, size_t size)
   rbuffer_write(input->key_buffer, buf, size);
 }
 
+#ifdef UNIX
 static void forward_simple_utf8(TermInput *input, TermKeyKey *key)
 {
   size_t len = 0;
@@ -200,6 +205,7 @@ static TermKeyResult tk_getkey(TermKey *tk, TermKeyKey *key, bool force)
 {
   return force ? termkey_getkey_force(tk, key) : termkey_getkey(tk, key);
 }
+#endif  // UNIX
 
 static void timer_cb(TimeWatcher *watcher, void *data);
 
@@ -218,6 +224,7 @@ static int get_key_code_timeout(void)
 
 static void tk_getkeys(TermInput *input, bool force)
 {
+#ifdef UNIX
   TermKeyKey key;
   TermKeyResult result;
 
@@ -236,6 +243,9 @@ static void tk_getkeys(TermInput *input, bool force)
   if (result != TERMKEY_RES_AGAIN || input->paste_enabled) {
     return;
   }
+#else
+  // FIXME
+#endif
 
   int ms  = get_key_code_timeout();
 
@@ -302,10 +312,14 @@ static bool handle_forced_escape(TermInput *input)
 {
   if (rbuffer_size(input->read_stream.buffer) > 1
       && !rbuffer_cmp(input->read_stream.buffer, "\x1b\x00", 2)) {
+#ifdef UNIX
     // skip the ESC and NUL and push one <esc> to the input buffer
     size_t rcnt;
     termkey_push_bytes(input->tk, rbuffer_read_ptr(input->read_stream.buffer,
           &rcnt), 1);
+#else
+    // FIXME
+#endif
     rbuffer_consumed(input->read_stream.buffer, 2);
     tk_getkeys(input, true);
     return true;
@@ -360,6 +374,7 @@ static void read_cb(Stream *stream, RBuffer *buf, size_t c, void *data,
       }
     }
 
+#ifdef UNIX
     RBUFFER_UNTIL_EMPTY(input->read_stream.buffer, ptr, len) {
       size_t consumed = termkey_push_bytes(input->tk, ptr, MIN(count, len));
       // termkey_push_bytes can return (size_t)-1, so it is possible that
@@ -374,6 +389,7 @@ static void read_cb(Stream *stream, RBuffer *buf, size_t c, void *data,
         break;
       }
     }
+#endif
   } while (rbuffer_size(input->read_stream.buffer));
   flush_input(input, true);
   // Make sure the next input escape sequence fits into the ring buffer

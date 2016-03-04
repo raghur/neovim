@@ -4,7 +4,9 @@
 #include <limits.h>
 
 #include <uv.h>
-#include <unibilium.h>
+#ifdef UNIX
+# include <unibilium.h>
+#endif
 
 #include "nvim/lib/kvec.h"
 
@@ -37,12 +39,16 @@ typedef struct {
   UIBridgeData *bridge;
   Loop *loop;
   bool stop;
+#ifdef UNIX
   unibi_var_t params[9];
+#endif
   char buf[OUTBUF_SIZE];
   size_t bufpos, bufsize;
   TermInput input;
   uv_loop_t write_loop;
+#ifdef UNIX
   unibi_term *ut;
+#endif
   union {
     uv_tty_t tty;
     uv_pipe_t pipe;
@@ -61,6 +67,7 @@ typedef struct {
   bool busy;
   HlAttrs print_attrs;
   int showing_mode;
+#ifdef UNIX
   struct {
     int enable_mouse, disable_mouse;
     int enable_bracketed_paste, disable_bracketed_paste;
@@ -68,6 +75,7 @@ typedef struct {
     int set_rgb_foreground, set_rgb_background;
     int enable_focus_reporting, disable_focus_reporting;
   } unibi_ext;
+#endif
 } TUIData;
 
 static bool volatile got_winch = false;
@@ -107,6 +115,30 @@ UI *tui_start(void)
   return ui_bridge_attach(ui, tui_main, tui_scheduler);
 }
 
+#ifdef UNIX
+static void unibi_out(UI *ui, int unibi_index)
+{
+  TUIData *data = ui->data;
+
+  const char *str = NULL;
+
+  if (unibi_index >= 0) {
+    if (unibi_index < unibi_string_begin_) {
+      str = unibi_get_ext_str(data->ut, (unsigned)unibi_index);
+    } else {
+      str = unibi_get_str(data->ut, (unsigned)unibi_index);
+    }
+  }
+
+  if (str) {
+    unibi_var_t vars[26 + 26] = {{0}};
+    unibi_format(vars, vars + 26, str, data->params, out, ui, NULL, NULL);
+  }
+}
+#else
+# define unibi_out(ui, idx)
+#endif
+
 static void terminfo_start(UI *ui)
 {
   TUIData *data = ui->data;
@@ -114,6 +146,7 @@ static void terminfo_start(UI *ui)
   data->bufpos = 0;
   data->bufsize = sizeof(data->buf) - CNORM_COMMAND_MAX_SIZE;
   data->showing_mode = 0;
+#ifdef UNIX
   data->unibi_ext.enable_mouse = -1;
   data->unibi_ext.disable_mouse = -1;
   data->unibi_ext.enable_bracketed_paste = -1;
@@ -123,8 +156,10 @@ static void terminfo_start(UI *ui)
   data->unibi_ext.exit_insert_mode = -1;
   data->unibi_ext.enable_focus_reporting = -1;
   data->unibi_ext.disable_focus_reporting = -1;
+#endif
   data->out_fd = 1;
   data->out_isatty = os_isatty(data->out_fd);
+#ifdef UNIX
   // setup unibilium
   data->ut = unibi_from_env();
   if (!data->ut) {
@@ -140,6 +175,7 @@ static void terminfo_start(UI *ui)
   unibi_out(ui, data->unibi_ext.enable_bracketed_paste);
   // Enable focus reporting
   unibi_out(ui, data->unibi_ext.enable_focus_reporting);
+#endif
   uv_loop_init(&data->write_loop);
   if (data->out_isatty) {
     uv_tty_init(&data->write_loop, &data->output_handle.tty, data->out_fd, 0);
@@ -156,6 +192,7 @@ static void terminfo_stop(UI *ui)
   // Destroy output stuff
   tui_mode_change(ui, NORMAL);
   tui_mouse_off(ui);
+#ifdef UNIX
   unibi_out(ui, unibi_exit_attribute_mode);
   // cursor should be set to normal before exiting alternate screen
   unibi_out(ui, unibi_cursor_normal);
@@ -164,6 +201,7 @@ static void terminfo_stop(UI *ui)
   unibi_out(ui, data->unibi_ext.disable_bracketed_paste);
   // Disable focus reporting
   unibi_out(ui, data->unibi_ext.disable_focus_reporting);
+#endif
   flush_buf(ui);
   uv_tty_reset_mode();
   uv_close((uv_handle_t *)&data->output_handle, NULL);
@@ -171,7 +209,9 @@ static void terminfo_stop(UI *ui)
   if (uv_loop_close(&data->write_loop)) {
     abort();
   }
+#ifdef UNIX
   unibi_destroy(data->ut);
+#endif
 }
 
 static void tui_terminal_start(UI *ui)
@@ -213,7 +253,9 @@ static void tui_main(UIBridgeData *bridge, UI *ui)
   kv_init(data->invalid_regions);
   signal_watcher_init(data->loop, &data->winch_handle, ui);
   signal_watcher_init(data->loop, &data->cont_handle, data);
+#ifdef UNIX
   signal_watcher_start(&data->cont_handle, sigcont_cb, SIGCONT);
+#endif
   // initialize input reading structures
   term_input_init(&data->input, &tui_loop);
   tui_terminal_start(ui);
@@ -249,10 +291,12 @@ static void refresh_event(void **argv)
   ui_refresh();
 }
 
+#ifdef UNIX
 static void sigcont_cb(SignalWatcher *watcher, int signum, void *data)
 {
   ((TUIData *)data)->cont_received = true;
 }
+#endif
 
 static void sigwinch_cb(SignalWatcher *watcher, int signum, void *data)
 {
@@ -280,6 +324,7 @@ static void update_attrs(UI *ui, HlAttrs attrs)
   }
 
   data->print_attrs = attrs;
+#ifdef UNIX
   unibi_out(ui, unibi_exit_attribute_mode);
   UGrid *grid = &data->grid;
 
@@ -324,6 +369,7 @@ static void update_attrs(UI *ui, HlAttrs attrs)
   if (attrs.reverse) {
     unibi_out(ui, unibi_enter_reverse_mode);
   }
+#endif
 }
 
 static void print_cell(UI *ui, UCell *ptr)
@@ -475,10 +521,14 @@ static void tui_set_scroll_region(UI *ui, int top, int bot, int left,
 {
   TUIData *data = ui->data;
   ugrid_set_scroll_region(&data->grid, top, bot, left, right);
+#ifdef UNIX
   data->can_use_terminal_scroll =
     left == 0 && right == ui->width - 1
     && ((top == 0 && bot == ui->height - 1)
         || unibi_get_str(data->ut, unibi_change_scroll_region));
+#else
+  data->can_use_terminal_scroll = false;
+#endif
 }
 
 static void tui_scroll(UI *ui, int count)
@@ -488,6 +538,7 @@ static void tui_scroll(UI *ui, int count)
   int clear_top, clear_bot;
   ugrid_scroll(grid, count, &clear_top, &clear_bot);
 
+#ifdef UNIX
   if (data->can_use_terminal_scroll) {
     // Change terminal scroll region and move cursor to the top
     data->params[0].i = grid->top;
@@ -500,7 +551,9 @@ static void tui_scroll(UI *ui, int count)
     clear_attrs.background = grid->bg;
     update_attrs(ui, clear_attrs);
   }
+#endif
 
+#ifdef UNIX
   if (count > 0) {
     if (data->can_use_terminal_scroll) {
       if (count == 1) {
@@ -510,7 +563,6 @@ static void tui_scroll(UI *ui, int count)
         unibi_out(ui, unibi_parm_delete_line);
       }
     }
-
   } else {
     if (data->can_use_terminal_scroll) {
       if (count == -1) {
@@ -521,7 +573,9 @@ static void tui_scroll(UI *ui, int count)
       }
     }
   }
+#endif
 
+#ifdef UNIX
   if (data->can_use_terminal_scroll) {
     // Restore terminal scroll region and cursor
     data->params[0].i = 0;
@@ -540,6 +594,10 @@ static void tui_scroll(UI *ui, int count)
     // Mark the entire scroll region as invalid for redrawing later
     invalidate(ui, grid->top, grid->bot, grid->left, grid->right);
   }
+#else
+    // Mark the entire scroll region as invalid for redrawing later
+    invalidate(ui, grid->top, grid->bot, grid->left, grid->right);
+#endif
 }
 
 static void tui_highlight_set(UI *ui, HlAttrs attrs)
@@ -595,6 +653,7 @@ static void tui_flush(UI *ui)
   flush_buf(ui);
 }
 
+#ifdef UNIX
 static void suspend_event(void **argv)
 {
   UI *ui = argv[0];
@@ -614,19 +673,23 @@ static void suspend_event(void **argv)
   // resume the main thread
   CONTINUE(data->bridge);
 }
+#endif
 
 static void tui_suspend(UI *ui)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   // kill(0, SIGTSTP) won't stop the UI thread, so we must poll for SIGCONT
   // before continuing. This is done in another callback to avoid
   // loop_poll_events recursion
   queue_put_event(data->loop->fast_events,
       event_create(1, suspend_event, 1, ui));
+#endif
 }
 
 static void tui_set_title(UI *ui, char *title)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   if (!(title && unibi_get_str(data->ut, unibi_to_status_line) &&
         unibi_get_str(data->ut, unibi_from_status_line))) {
@@ -635,6 +698,7 @@ static void tui_set_title(UI *ui, char *title)
   unibi_out(ui, unibi_to_status_line);
   out(ui, title, strlen(title));
   unibi_out(ui, unibi_from_status_line);
+#endif
 }
 
 static void tui_set_icon(UI *ui, char *icon)
@@ -709,9 +773,13 @@ static void update_size(UI *ui)
     goto end;
   }
 
+#ifdef UNIX
   // 4 - read from terminfo if available
   height = unibi_get_num(data->ut, unibi_lines);
   width = unibi_get_num(data->ut, unibi_columns);
+#else
+  // FIXME
+#endif
 
 end:
   if (width <= 0 || height <= 0) {
@@ -726,30 +794,14 @@ end:
 
 static void unibi_goto(UI *ui, int row, int col)
 {
+#ifdef UNIX
   TUIData *data = ui->data;
   data->params[0].i = row;
   data->params[1].i = col;
   unibi_out(ui, unibi_cursor_address);
-}
-
-static void unibi_out(UI *ui, int unibi_index)
-{
-  TUIData *data = ui->data;
-
-  const char *str = NULL;
-
-  if (unibi_index >= 0) {
-    if (unibi_index < unibi_string_begin_) {
-      str = unibi_get_ext_str(data->ut, (unsigned)unibi_index);
-    } else {
-      str = unibi_get_str(data->ut, (unsigned)unibi_index);
-    }
-  }
-
-  if (str) {
-    unibi_var_t vars[26 + 26] = {{0}};
-    unibi_format(vars, vars + 26, str, data->params, out, ui, NULL, NULL);
-  }
+#else
+  // FIXME
+#endif
 }
 
 static void out(void *ctx, const char *str, size_t len)
@@ -766,6 +818,7 @@ static void out(void *ctx, const char *str, size_t len)
   data->bufpos += len;
 }
 
+#ifdef UNIX
 static void unibi_set_if_empty(unibi_term *ut, enum unibi_string str,
     const char *val)
 {
@@ -893,6 +946,7 @@ end:
   unibi_set_if_empty(ut, unibi_clr_eol, "\x1b[K");
   unibi_set_if_empty(ut, unibi_clr_eos, "\x1b[J");
 }
+#endif
 
 static void flush_buf(UI *ui)
 {
@@ -914,9 +968,11 @@ static void flush_buf(UI *ui)
   uv_run(&data->write_loop, UV_RUN_DEFAULT);
   data->bufpos = 0;
 
+#ifdef UNIX
   if (!data->busy) {
     // not busy and cursor is visible(see above), append a "cursor invisible"
     // command to the beginning of the buffer for the next flush
     unibi_out(ui, unibi_cursor_invisible);
   }
+#endif
 }
