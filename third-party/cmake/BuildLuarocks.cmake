@@ -113,6 +113,14 @@ add_custom_target(lpeg
 list(APPEND THIRD_PARTY_DEPS lpeg)
 
 if(USE_BUNDLED_BUSTED)
+  # FIXME: lua-term 0.4 fails to build on Windows, see hoelzro/lua-term/issues/15
+  add_custom_command(OUTPUT ${HOSTDEPS_LIB_DIR}/luarocks/rocks/lua-term
+    COMMAND ${LUAROCKS_BINARY}
+    ARGS build https://raw.githubusercontent.com/hoelzro/lua-term/0.03/lua-term-0.3-1.rockspec ${LUAROCKS_BUILDARGS}
+    DEPENDS luarocks)
+  add_custom_target(lua-term
+    DEPENDS ${HOSTDEPS_LIB_DIR}/luarocks/rocks/lua-term)
+
   if(WIN32)
     set(BUSTED_EXE "${HOSTDEPS_BIN_DIR}/busted.bat")
   else()
@@ -121,7 +129,7 @@ if(USE_BUNDLED_BUSTED)
   add_custom_command(OUTPUT ${BUSTED_EXE}
     COMMAND ${LUAROCKS_BINARY}
     ARGS build https://raw.githubusercontent.com/Olivine-Labs/busted/v2.0.rc11-0/busted-2.0.rc11-0.rockspec ${LUAROCKS_BUILDARGS}
-    DEPENDS luarocks)
+    DEPENDS lua-term)
   add_custom_target(busted
     DEPENDS ${BUSTED_EXE})
 
@@ -134,7 +142,7 @@ if(USE_BUNDLED_BUSTED)
 
   add_custom_command(OUTPUT ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client
     COMMAND ${LUAROCKS_BINARY}
-    ARGS build https://raw.githubusercontent.com/neovim/lua-client/0.0.1-14/nvim-client-0.0.1-14.rockspec ${LUAROCKS_BUILDARGS} LIBUV_DIR=${HOSTDEPS_INSTALL_DIR}
+    ARGS build https://raw.githubusercontent.com/neovim/lua-client/0.0.1-20/nvim-client-0.0.1-20.rockspec ${LUAROCKS_BUILDARGS} LIBUV_DIR=${HOSTDEPS_INSTALL_DIR}
     DEPENDS luacheck libuv)
   add_custom_target(nvim-client
     DEPENDS ${HOSTDEPS_LIB_DIR}/luarocks/rocks/nvim-client)
