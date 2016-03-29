@@ -76,7 +76,7 @@ elseif(WIN32 AND MSVC)
   endif()
 
   string(FIND ${CMAKE_GENERATOR} Win64 VS_WIN64)
-  if(VS_WIN64 EQUAL -1)
+  if(VS_WIN64 EQUAL -1 AND NOT CMAKE_CL_64)
     set(VS_ARCH x86)
   else()
     set(VS_ARCH x64)
