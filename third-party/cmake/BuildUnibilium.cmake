@@ -1,8 +1,3 @@
-if(WIN32)
-  message(STATUS "Building Unibilium in Windows is not supported (skipping)")
-  return()
-endif()
-
 ExternalProject_Add(unibilium
   PREFIX ${DEPS_BUILD_DIR}
   URL ${UNIBILIUM_URL}
@@ -15,11 +10,14 @@ ExternalProject_Add(unibilium
     -DTARGET=unibilium
     -DUSE_EXISTING_SRC_DIR=${USE_EXISTING_SRC_DIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DownloadAndExtractFile.cmake
-  CONFIGURE_COMMAND ""
+  CONFIGURE_COMMAND ${CMAKE_COMMAND} ${DEPS_BUILD_DIR}/src/unibilium
+    -DCMAKE_INSTALL_PREFIX=${DEPS_INSTALL_DIR}
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_COMPILER_ARG1}"
+    # Make sure we use the same generator, otherwise we may
+    # accidentaly end up using different MSVC runtimes
+    -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
   BUILD_IN_SOURCE 1
-  BUILD_COMMAND ${MAKE_PRG} CC=${DEPS_C_COMPILER}
-                            PREFIX=${DEPS_INSTALL_DIR}
-                            CFLAGS=-fPIC
-  INSTALL_COMMAND ${MAKE_PRG} PREFIX=${DEPS_INSTALL_DIR} install)
-
+  BUILD_COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE}
+  INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install --config ${CMAKE_BUILD_TYPE})
 list(APPEND THIRD_PARTY_DEPS unibilium)
