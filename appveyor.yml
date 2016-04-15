@@ -4,14 +4,21 @@ environment:
   # The default cpack in the PATH is not CMake
   CPACK: C:\Program Files (x86)\CMake\bin\cpack.exe
   matrix:
-  - BUILD_DEPS_SCRIPT: .ci\vs2015_build_deps.bat
+  - TARGET: MSYS2_64
+    BUILD_SCRIPT: C:\msys64\usr\bin\bash -lc "cd $APPVEYOR_BUILD_FOLDER && bash .ci/msys2_build.sh"
+  - TARGET: MSVC_64
+    BUILD_DEPS_SCRIPT: .ci\vs2015_build_deps.bat
     BUILD_SCRIPT: .ci\vs2015_build.bat
-  - BUILD_DEPS_SCRIPT: .ci\mingw_build_deps.bat
+  - TARGET: MINGW_32
+    BUILD_DEPS_SCRIPT: .ci\mingw_build_deps.bat
     BUILD_SCRIPT: .ci\mingw_build.bat
+matrix:
+  allow_failures:
+    - TARGET: MSYS2_64
 install: []
 build_script:
-- cmd: '%BUILD_DEPS_SCRIPT%'
-- cmd: '%BUILD_SCRIPT%'
+- if defined BUILD_DEPS_SCRIPT call %BUILD_DEPS_SCRIPT%
+- call %BUILD_SCRIPT%
 # Build artifacts
 - cd build
 - '"%CPACK%" -G NSIS -C Release'
