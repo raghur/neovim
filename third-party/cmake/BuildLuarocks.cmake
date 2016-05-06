@@ -59,7 +59,7 @@ if(UNIX OR (MINGW AND CMAKE_CROSSCOMPILING))
   if(USE_BUNDLED_LUAJIT)
     list(APPEND LUAROCKS_OPTS
       --with-lua=${HOSTDEPS_INSTALL_DIR}
-      --with-lua-include=${HOSTDEPS_INSTALL_DIR}/include/luajit-2.0)
+      --with-lua-include=${HOSTDEPS_INSTALL_DIR}/include/luajit-2.1)
   endif()
 
   BuildLuarocks(
@@ -74,7 +74,7 @@ elseif(MSVC)
     /LUA ${DEPS_INSTALL_DIR}
     /LIB ${DEPS_LIB_DIR}
     /BIN ${DEPS_BIN_DIR}
-    /INC ${DEPS_INSTALL_DIR}/include/luajit-2.0/
+    /INC ${DEPS_INSTALL_DIR}/include/luajit-2.1/
     /P ${DEPS_INSTALL_DIR} /TREE ${DEPS_INSTALL_DIR}
     /SCRIPTS ${DEPS_BIN_DIR}
     /CMOD ${DEPS_BIN_DIR}

@@ -81,14 +81,14 @@ set(LIBUV_SHA256 906e1a5c673c95cb261adeacdb7308a65b4a8f7c9c50d85f3021364951fa9cd
 set(MSGPACK_URL https://github.com/msgpack/msgpack-c/archive/cpp-1.0.0.tar.gz)
 set(MSGPACK_SHA256 afda64ca445203bb7092372b822bae8b2539fdcebbfc3f753f393628c2bcfe7d)
 
-set(LUAJIT_URL https://github.com/neovim/deps/raw/master/opt/LuaJIT-2.0.4.tar.gz)
-set(LUAJIT_SHA256 620fa4eb12375021bef6e4f237cbd2dd5d49e56beb414bee052c746beef1807d)
+set(LUAJIT_URL http://luajit.org/download/LuaJIT-2.1.0-beta2.tar.gz)
+set(LUAJIT_SHA256 713924ca034b9d99c84a0b7b701794c359ffb54f8e3aa2b84fad52d98384cf47)
 
 set(LUA_URL https://github.com/lua/lua/archive/5.1.5.tar.gz)
 set(LUA_SHA256 1cd642c4c39778306a14e62ccddace5c7a4fb2257b0b06f43bc81cf305c7415f)
 
-set(LUAROCKS_URL https://github.com/keplerproject/luarocks/archive/5d8a16526573b36d5b22aa74866120c998466697.tar.gz)
-set(LUAROCKS_SHA256 cae709111c5701235770047dfd7169f66b82ae1c7b9b79207f9df0afb722bfd9)
+set(LUAROCKS_URL https://github.com/keplerproject/luarocks/archive/v2.3.0.tar.gz)
+set(LUAROCKS_SHA256 92c014889ec6a09c4bb492df6b7f7be784110d6abe031e16418342781ca5c5ce)
 
 set(UNIBILIUM_URL https://github.com/mauke/unibilium/archive/v1.2.0.tar.gz)
 set(UNIBILIUM_SHA256 623af1099515e673abfd3cae5f2fa808a09ca55dda1c65a7b5c9424eb304ead8)
