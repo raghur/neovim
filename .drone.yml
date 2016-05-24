@@ -6,6 +6,7 @@ build:
   commands:
     - pacman -S --noconfirm mingw-w64-i686-libuv mingw-w64-i686-luajit-git mingw-w64-i686-lua51-lpeg mingw-w64-i686-msgpack-c mingw-w64-i686-cmake
     - mkdir build
+    - cd build
     - cmake .. -G "MSYS Makefiles"
     - make
 
