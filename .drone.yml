@@ -4,7 +4,9 @@ build:
   shell: mingw$$arch
   pull: true
   commands:
-    - pacman -S --noconfirm mingw-w64-i686-libuv mingw-w64-i686-luajit-git mingw-w64-i686-lua51-lpeg mingw-w64-i686-msgpack-c mingw-w64-i686-cmake
+    - if [ $$arch = 32 ]; then target=i686; fi
+    - if [ $$arch = 64 ]; then target=x86_64; fi
+    - pacman -S --noconfirm mingw-w64-${target}-libuv mingw-w64-${target}-luajit-git mingw-w64-${target}-lua51-lpeg mingw-w64-${target}-msgpack-c mingw-w64-${target}-cmake
     - mkdir build
     - cd build
     - cmake .. -G "MSYS Makefiles"
