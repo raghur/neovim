@@ -1,0 +1,15 @@
+
+build:
+  image: teaci/msys$$arch
+  shell: mingw$$arch
+  pull: true
+  commands:
+    - pacman -S --noconfirm mingw-w64-i686-libuv mingw-w64-i686-luajit-git mingw-w64-i686-lua51-lpeg mingw-w64-i686-msgpack-c
+    - mkdir build
+    - cmake .. -G "MSYS Makefiles"
+    - make
+
+matrix:
+  arch:
+    - 32
+    - 64
