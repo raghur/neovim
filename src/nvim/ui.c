@@ -369,6 +369,16 @@ void ui_flush(void)
   UI_CALL(flush);
 }
 
+void ui_pum_start(int selected, pumitem_T *arr, int pum_size)
+{
+  UI_CALL(pum_start, selected, arr, pum_size);
+}
+
+void ui_pum_stop(void)
+{
+  UI_CALL(pum_stop);
+}
+
 static void send_output(uint8_t **ptr)
 {
   uint8_t *p = *ptr;

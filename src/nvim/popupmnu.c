@@ -21,6 +21,7 @@
 #include "nvim/memory.h"
 #include "nvim/window.h"
 #include "nvim/edit.h"
+#include "nvim/ui.h"
 
 static pumitem_T *pum_array = NULL; // items of displayed pum
 static int pum_size;                // nr of items in "pum_array"
@@ -305,6 +306,8 @@ void pum_redraw(void)
                 / (pum_size - pum_height);
   }
 
+  ui_pum_start(pum_selected, pum_array, pum_size);
+
   for (i = 0; i < pum_height; ++i) {
     idx = i + pum_first;
     attr = (idx == pum_selected) ? attr_select : attr_norm;
@@ -458,6 +461,7 @@ void pum_redraw(void)
     }
     row++;
   }
+  ui_pum_stop();
 }
 
 /// Set the index of the currently selected item.  The menu will scroll when

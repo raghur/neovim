@@ -88,6 +88,8 @@ void ui_attach(uint64_t channel_id, Integer width, Integer height,
   ui->suspend = remote_ui_suspend;
   ui->set_title = remote_ui_set_title;
   ui->set_icon = remote_ui_set_icon;
+  ui->pum_start = remote_ui_pum_start;
+  ui->pum_stop = remote_ui_pum_stop;
   pmap_put(uint64_t)(connected_uis, channel_id, ui);
   ui_attach_impl(ui);
   return;
@@ -341,3 +343,33 @@ static void remote_ui_set_icon(UI *ui, char *icon)
   ADD(args, STRING_OBJ(cstr_to_string(icon)));
   push_call(ui, "set_icon", args);
 }
+
+static void remote_ui_pum_start(UI *ui, int selected,
+    pumitem_T *arr, int pum_size)
+{
+  Array args = ARRAY_DICT_INIT;
+  Array items = ARRAY_DICT_INIT;
+
+  for (int i=0; i<pum_size; i++) {
+    Dictionary dict = ARRAY_DICT_INIT;
+    PUT(dict, "text", STRING_OBJ(cstr_to_string((char *) arr[i].pum_text)));
+    PUT(dict, "kind", STRING_OBJ(cstr_to_string((char *) arr[i].pum_kind)));
+    PUT(dict, "extra", STRING_OBJ(cstr_to_string((char *) arr[i].pum_extra)));
+    PUT(dict, "info", STRING_OBJ(cstr_to_string((char *) arr[i].pum_info)));
+    if (selected == i) {
+      PUT(dict, "selected", BOOLEAN_OBJ(true));
+    }
+
+    ADD(items, DICTIONARY_OBJ(dict));
+  }
+
+  ADD(args, ARRAY_OBJ(items));
+  push_call(ui, "pum_start", args);
+}
+
+static void remote_ui_pum_stop(UI *ui)
+{
+  Array args = ARRAY_DICT_INIT;
+  push_call(ui, "pum_stop", args);
+}
+

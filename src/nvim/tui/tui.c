@@ -106,6 +106,8 @@ UI *tui_start(void)
   ui->suspend = tui_suspend;
   ui->set_title = tui_set_title;
   ui->set_icon = tui_set_icon;
+  ui->pum_start = tui_pum_start;
+  ui->pum_stop = tui_pum_stop;
   return ui_bridge_attach(ui, tui_main, tui_scheduler);
 }
 
@@ -926,4 +928,13 @@ static void flush_buf(UI *ui)
     // command to the beginning of the buffer for the next flush
     unibi_out(ui, unibi_cursor_invisible);
   }
+}
+
+static void tui_pum_start(UI *ui, int selected,
+    pumitem_T *arr, int pum_size)
+{
+}
+
+static void tui_pum_stop(UI *ui)
+{
 }

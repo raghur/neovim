@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "nvim/popupmnu.h"
 
 typedef struct {
   bool bold, underline, undercurl, italic, reverse;
@@ -40,6 +41,8 @@ struct ui_t {
   void (*set_title)(UI *ui, char *title);
   void (*set_icon)(UI *ui, char *icon);
   void (*stop)(UI *ui);
+  void (*pum_start)(UI *ui, int selected, pumitem_T *arr, int pum_size);
+  void (*pum_stop)(UI *ui);
 };
 
 #ifdef INCLUDE_GENERATED_DECLARATIONS
