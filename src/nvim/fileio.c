@@ -5147,6 +5147,8 @@ static void vim_maketempdir(void)
   }
 }
 
+static char_u regexp_escape_chars[] = "[]{}";
+
 /// Delete "name" and everything in it, recursively.
 /// @param name The path which should be deleted.
 /// @return 0 for success, -1 if some file was not deleted.
@@ -5155,7 +5157,12 @@ int delete_recursive(char_u *name)
   int result = 0;
 
   if (os_isrealdir(name)) {
-    snprintf((char *)NameBuff, MAXPATHL, "%s/*", name);  // NOLINT
+    char_u *esc_name;
+    // Escape some regexp chars in file names as these probably will be
+    // interpreted as ill-formed regular expressions in gen_expand_wildcards.
+    esc_name = vim_strsave_escaped(name, regexp_escape_chars);
+    snprintf((char *)NameBuff, MAXPATHL, "%s/*", esc_name);  // NOLINT
+    xfree(esc_name);
 
     char_u **files;
     int file_count;
