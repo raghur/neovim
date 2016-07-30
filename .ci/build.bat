@@ -15,15 +15,19 @@ set PATH=C:\msys64\mingw%BITS%\bin;C:\Windows\System32;C:\Windows;%PATH%
 :: The default cpack in the PATH is not CMake
 set PATH=C:\Program Files (x86)\CMake\bin\cpack.exe;%PATH%
 
-:: Build third-party dependencies
 C:\msys64\usr\bin\bash -lc "pacman --verbose --noconfirm -Su" || goto :error
 C:\msys64\usr\bin\bash -lc "pacman --verbose --noconfirm --needed -S mingw-w64-%ARCH%-cmake mingw-w64-%ARCH%-perl mingw-w64-%ARCH%-python2 mingw-w64-%ARCH%-diffutils gperf" || goto :error
 
-mkdir .deps
-cd .deps
-cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..\third-party\ || goto :error
-mingw32-make VERBOSE=1 || goto :error
-cd ..
+:: Build third-party dependencies
+if not exist ".deps/usr" (
+	mkdir .deps
+	cd .deps
+	cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..\third-party\ || goto :error
+	mingw32-make VERBOSE=1 || goto :error
+	cd ..
+) else (
+	echo "Loading third-party dependencies from cache"
+)
 
 :: Build Neovim
 mkdir build

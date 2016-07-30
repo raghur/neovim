@@ -5,6 +5,8 @@ configuration:
 install: []
 build_script:
 - call .ci\build.bat
+cache:
+- .deps\usr -> third-party\CMakeLists.txt
 artifacts:
 - path: build/Neovim.zip
 - path: build/Neovim.exe
