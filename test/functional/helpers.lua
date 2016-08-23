@@ -427,9 +427,9 @@ local function rmdir(path)
       end
     end
   end
-  local ret, err = os.remove(path)
+  local ret, err = lfs.rmdir(path)
   if not ret then
-    error('os.remove: '..err)
+    error('lfs.rmdir: '..err)
   end
   return ret
 end
